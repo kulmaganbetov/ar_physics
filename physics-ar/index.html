@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#00d4ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PhysicsAR" />
+  <meta name="description" content="Физика зертханасы — AR және AI арқылы физиканы үйрен" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <title>PhysicsAR — Физика Зертханасы</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design Tokens ─────────────────────────────────── */
+    :root {
+      --bg:      #060912;
+      --bg2:     #0d1526;
+      --bg3:     #111d35;
+      --cyan:    #00d4ff;
+      --green:   #00ff9d;
+      --orange:  #ff6b35;
+      --text:    #e8f0fe;
+      --text2:   #8ba3c7;
+      --border:  rgba(0, 212, 255, 0.15);
+      --radius:  14px;
+      --shadow:  0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ── Reset & Base ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Rajdhani', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    input, button { font-family: inherit; }
+
+    a { color: var(--cyan); text-decoration: none; }
+
+    /* ── Utility ───────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    .glow-text {
+      color: var(--cyan);
+      text-shadow: 0 0 18px rgba(0, 212, 255, 0.6);
+    }
+
+    /* ── Splash Screen ─────────────────────────────────── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+
+    #splash.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .splash-atom {
+      animation: atom-spin 3s linear infinite;
+      filter: drop-shadow(0 0 16px rgba(0, 212, 255, 0.8));
+    }
+
+    @keyframes atom-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .splash-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 24px rgba(0, 212, 255, 0.7);
+      letter-spacing: 0.05em;
+      animation: pulse-in 0.8s ease both;
+      animation-delay: 0.3s;
+    }
+
+    .splash-sub {
+      font-size: 0.9rem;
+      color: var(--text2);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: pulse-in 0.8s ease both;
+      animation-delay: 0.5s;
+    }
+
+    .splash-loader {
+      width: 120px;
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      overflow: hidden;
+      animation: pulse-in 0.5s ease both;
+      animation-delay: 0.7s;
+    }
+
+    .splash-loader-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      border-radius: 2px;
+      animation: load-bar 2.4s ease forwards;
+      animation-delay: 0.7s;
+    }
+
+    @keyframes load-bar {
+      from { width: 0; }
+      to   { width: 100%; }
+    }
+
+    @keyframes pulse-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Auth Pages ────────────────────────────────────── */
+    #auth-wrapper {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 28px 32px;
+      box-shadow: var(--shadow);
+      animation: card-in 0.4s ease both;
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .auth-logo svg { flex-shrink: 0; }
+
+    .auth-logo-text {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .auth-logo-text span {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 400;
+      font-family: 'Noto Sans', sans-serif;
+      color: var(--text2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .auth-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .auth-subtitle {
+      color: var(--text2);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* Form fields */
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.97rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field input::placeholder { color: var(--text2); opacity: 0.6; }
+
+    .field input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+    }
+
+    .field input.error {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.12);
+    }
+
+    /* Error message */
+    .form-error {
+      background: rgba(255, 107, 53, 0.1);
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      color: var(--orange);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .form-error.visible { display: block; }
+
+    /* Primary button */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, var(--cyan), #0099cc);
+      border: none;
+      border-radius: var(--radius);
+      color: #060912;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
+    }
+
+    .btn-primary:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(0, 212, 255, 0.45); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary.loading::after {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(6,9,18,0.4);
+      border-top-color: #060912;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 0.9rem;
+      color: var(--text2);
+    }
+
+    .auth-switch a {
+      color: var(--cyan);
+      font-weight: 500;
+    }
+
+    .auth-switch a:hover { text-decoration: underline; }
+
+    /* ── Main App (placeholder for next step) ──────────── */
+    #app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Splash ──────────────────────────────────────────── -->
+  <div id="splash">
+    <svg class="splash-atom" width="90" height="90" viewBox="0 0 192 192">
+      <circle cx="96" cy="96" r="10" fill="#00d4ff"/>
+      <ellipse cx="96" cy="96" rx="56" ry="22" fill="none" stroke="#00d4ff" stroke-width="2.5" opacity="0.9"/>
+      <ellipse cx="96" cy="96" rx="56" ry="22" fill="none" stroke="#00d4ff" stroke-width="2.5" opacity="0.9"
+        transform="rotate(60 96 96)"/>
+      <ellipse cx="96" cy="96" rx="56" ry="22" fill="none" stroke="#00d4ff" stroke-width="2.5" opacity="0.9"
+        transform="rotate(120 96 96)"/>
+      <circle cx="152" cy="96" r="6" fill="#00d4ff"/>
+      <circle cx="68" cy="48" r="6" fill="#00d4ff"/>
+      <circle cx="68" cy="144" r="6" fill="#00d4ff"/>
+    </svg>
+    <div class="splash-title">PhysicsAR</div>
+    <div class="splash-sub">Физика Зертханасы</div>
+    <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  </div>
+
+  <!-- ── Auth ────────────────────────────────────────────── -->
+  <div id="auth-wrapper" class="hidden">
+
+    <!-- Login -->
+    <div id="page-login" class="auth-card">
+      <div class="auth-logo">
+        <svg width="36" height="36" viewBox="0 0 192 192">
+          <circle cx="96" cy="96" r="9" fill="#00d4ff"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"
+            transform="rotate(60 96 96)"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"
+            transform="rotate(120 96 96)"/>
+        </svg>
+        <div class="auth-logo-text">
+          PhysicsAR
+          <span>Физика Зертханасы</span>
+        </div>
+      </div>
+
+      <h1 class="auth-title">Кіру</h1>
+      <p class="auth-subtitle">Есептік жазбаңызға кіріңіз</p>
+
+      <div id="login-error" class="form-error"></div>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="login-email">Электрондық пошта</label>
+          <input id="login-email" type="email" placeholder="example@mail.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="login-password">Құпия сөз</label>
+          <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn">Кіру</button>
+      </form>
+
+      <p class="auth-switch">
+        Тіркелмедіңіз бе? <a href="#" id="go-register">Тіркелу</a>
+      </p>
+    </div>
+
+    <!-- Register -->
+    <div id="page-register" class="auth-card hidden">
+      <div class="auth-logo">
+        <svg width="36" height="36" viewBox="0 0 192 192">
+          <circle cx="96" cy="96" r="9" fill="#00d4ff"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"
+            transform="rotate(60 96 96)"/>
+          <ellipse cx="96" cy="96" rx="52" ry="20" fill="none" stroke="#00d4ff" stroke-width="3"
+            transform="rotate(120 96 96)"/>
+        </svg>
+        <div class="auth-logo-text">
+          PhysicsAR
+          <span>Физика Зертханасы</span>
+        </div>
+      </div>
+
+      <h1 class="auth-title">Тіркелу</h1>
+      <p class="auth-subtitle">Жаңа есептік жазба жасаңыз</p>
+
+      <div id="register-error" class="form-error"></div>
+
+      <form id="register-form" novalidate>
+        <div class="field">
+          <label for="reg-name">Аты-жөні</label>
+          <input id="reg-name" type="text" placeholder="Айбек Сейітов" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="reg-email">Электрондық пошта</label>
+          <input id="reg-email" type="email" placeholder="example@mail.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="reg-password">Құпия сөз</label>
+          <input id="reg-password" type="password" placeholder="Кемінде 6 таңба" autocomplete="new-password" required />
+        </div>
+        <button type="submit" class="btn-primary" id="register-btn">Тіркелу</button>
+      </form>
+
+      <p class="auth-switch">
+        Есептік жазбаңыз бар ма? <a href="#" id="go-login">Кіру</a>
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ── Main App (populated in next steps) ──────────────── -->
+  <div id="app" class="hidden">
+    <!-- pages and nav will be added here -->
+  </div>
+
+  <script>
+    /* ── Constants ──────────────────────────────────────── */
+    const LS_TOKEN = 'physics_token';
+    const LS_USER  = 'physics_user';
+
+    /* ── DOM refs ───────────────────────────────────────── */
+    const splash      = document.getElementById('splash');
+    const authWrapper = document.getElementById('auth-wrapper');
+    const appEl       = document.getElementById('app');
+    const pageLogin   = document.getElementById('page-login');
+    const pageReg     = document.getElementById('page-register');
+
+    /* ── Splash → Auth/App ──────────────────────────────── */
+    window.addEventListener('load', () => {
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+
+      // After 3 s hide splash, show correct view
+      setTimeout(() => {
+        splash.classList.add('fade-out');
+        setTimeout(() => {
+          splash.classList.add('hidden');
+          routeOnLoad();
+        }, 600);
+      }, 3000);
+    });
+
+    function routeOnLoad() {
+      const token = localStorage.getItem(LS_TOKEN);
+      if (token) {
+        showApp();
+      } else {
+        showAuth('login');
+      }
+    }
+
+    /* ── Auth view helpers ──────────────────────────────── */
+    function showAuth(page = 'login') {
+      appEl.classList.add('hidden');
+      authWrapper.classList.remove('hidden');
+      if (page === 'register') {
+        pageLogin.classList.add('hidden');
+        pageReg.classList.remove('hidden');
+      } else {
+        pageReg.classList.add('hidden');
+        pageLogin.classList.remove('hidden');
+      }
+    }
+
+    function showApp() {
+      authWrapper.classList.add('hidden');
+      appEl.classList.remove('hidden');
+      // Navigate to current hash or default home
+      const hash = location.hash || '#home';
+      location.hash = hash;
+    }
+
+    /* ── Switch between login / register ───────────────── */
+    document.getElementById('go-register').addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuth('register');
+    });
+
+    document.getElementById('go-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuth('login');
+    });
+
+    /* ── Auth API helper ────────────────────────────────── */
+    async function authRequest(action, payload) {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Қате орын алды');
+      return data;
+    }
+
+    function setLoading(btn, loading) {
+      btn.disabled = loading;
+      btn.classList.toggle('loading', loading);
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    function clearError(id) {
+      const el = document.getElementById(id);
+      el.textContent = '';
+      el.classList.remove('visible');
+    }
+
+    function markInputError(input, hasError) {
+      input.classList.toggle('error', hasError);
+    }
+
+    /* ── Login form ─────────────────────────────────────── */
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearError('login-error');
+
+      const emailEl    = document.getElementById('login-email');
+      const passwordEl = document.getElementById('login-password');
+      const btn        = document.getElementById('login-btn');
+
+      const email    = emailEl.value.trim();
+      const password = passwordEl.value;
+
+      // Client-side validation
+      let valid = true;
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        markInputError(emailEl, true);
+        valid = false;
+      } else {
+        markInputError(emailEl, false);
+      }
+      if (!password || password.length < 6) {
+        markInputError(passwordEl, true);
+        valid = false;
+      } else {
+        markInputError(passwordEl, false);
+      }
+      if (!valid) {
+        showError('login-error', 'Электрондық пошта немесе құпия сөз дұрыс емес');
+        return;
+      }
+
+      setLoading(btn, true);
+      try {
+        const data = await authRequest('login', { email, password });
+        localStorage.setItem(LS_TOKEN, data.token);
+        localStorage.setItem(LS_USER,  JSON.stringify(data.user));
+        showApp();
+      } catch (err) {
+        showError('login-error', err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    // Clear errors on input
+    ['login-email', 'login-password'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => {
+        clearError('login-error');
+        markInputError(document.getElementById(id), false);
+      });
+    });
+
+    /* ── Register form ──────────────────────────────────── */
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearError('register-error');
+
+      const nameEl     = document.getElementById('reg-name');
+      const emailEl    = document.getElementById('reg-email');
+      const passwordEl = document.getElementById('reg-password');
+      const btn        = document.getElementById('register-btn');
+
+      const name     = nameEl.value.trim();
+      const email    = emailEl.value.trim();
+      const password = passwordEl.value;
+
+      let valid = true;
+      if (!name) {
+        markInputError(nameEl, true);
+        valid = false;
+      } else {
+        markInputError(nameEl, false);
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        markInputError(emailEl, true);
+        valid = false;
+      } else {
+        markInputError(emailEl, false);
+      }
+      if (!password || password.length < 6) {
+        markInputError(passwordEl, true);
+        valid = false;
+      } else {
+        markInputError(passwordEl, false);
+      }
+      if (!valid) {
+        showError('register-error', 'Барлық өрістерді дұрыс толтырыңыз');
+        return;
+      }
+
+      setLoading(btn, true);
+      try {
+        await authRequest('register', { email, password, name });
+        // Auto-login after register
+        const data = await authRequest('login', { email, password });
+        localStorage.setItem(LS_TOKEN, data.token);
+        localStorage.setItem(LS_USER,  JSON.stringify(data.user));
+        showApp();
+      } catch (err) {
+        showError('register-error', err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    ['reg-name', 'reg-email', 'reg-password'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => {
+        clearError('register-error');
+        markInputError(document.getElementById(id), false);
+      });
+    });
+  </script>
+</body>
+</html>
